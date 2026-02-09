@@ -1,0 +1,2025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes">
+  
+  <!-- Primary Meta Tags -->
+  <title>DLLM-Searcher: Adapting Diffusion Large Language Models for Search Agents</title>
+  <meta name="title" content="DLLM-Searcher: Adapting Diffusion Large Language Models for Search Agents">
+  <meta name="description" content="DLLM-Searcher proposes a two-stage post-training pipeline (Agentic SFT + Agentic VRPO) and a novel P-ReAct paradigm that enables dLLMs to keep thinking while waiting for tool responses, achieving ~15% inference acceleration.">
+  <meta name="keywords" content="DLLM-Searcher, Diffusion Language Models, Search Agents, P-ReAct, Agentic SFT, VRPO, LLM Agents, Information Retrieval">
+  <meta name="author" content="Jiahao Zhao, Shaoxuan Xu, Zhongxiang Sun, Fengqi Zhu, Jingyang Ou, Chongxuan Li, Xiao Zhang, Jun Xu">
+  <meta name="robots" content="index, follow">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="DLLM-Searcher: Adapting Diffusion Large Language Models for Search Agents">
+  <meta property="og:description" content="A novel framework enabling dLLMs to keep thinking while waiting for tool responses, achieving ~15% inference acceleration.">
+  <meta property="og:image" content="visualization/main.png">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="DLLM-Searcher: Adapting Diffusion Large Language Models for Search Agents">
+  <meta name="twitter:description" content="A novel framework enabling dLLMs to keep thinking while waiting for tool responses.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Academicons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  
+  <style>
+    :root {
+      /* 配色方案 */
+      --my-blue: #00c6aa;
+      --primary: #0096c7;
+      --primary-light: #00b4d8;
+      --primary-dark: #666666;
+      --accent: #FFB570;
+      --accent-light: #FFc590;
+      --cyan: #00b4d8;
+      --teal: #00d4aa;
+      --green: #33ff99;
+      --success: #33ff99;
+      --warning: #d69e2e;
+      --bg-light: #f7fafc;
+      --bg-dark: #023e8a;
+      --text-primary: #1a202c;
+      --text-secondary: #4a5568;
+      --text-muted: #718096;
+      --border: #e2e8f0;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-primary);
+      line-height: 1.7;
+      background: var(--bg-light);
+      overflow-x: hidden;
+      font-size: 16px;
+    }
+
+    /* Typography */
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .serif {
+      font-family: 'Source Serif 4', Georgia, serif;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Layout */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .section {
+      padding: 5rem 0;
+    }
+
+    /* Hero Section */
+    .hero {
+      background: white;
+      color: var(--text-primary);
+      padding: 4rem 0 5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(0, 150, 199, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 0.5rem 1rem;
+      border-radius: 2rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+      border: 1px solid rgba(0, 150, 199, 0.2);
+      color: var(--primary);
+    }
+
+    .hero-badge .emoji {
+      font-size: 1.1rem;
+    }
+
+    .hero-title {
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 800;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-title .highlight {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(1.1rem, 2vw, 1.35rem);
+      font-weight: 400;
+      opacity: 0.9;
+      max-width: 800px;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    /* Authors */
+    .authors {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+    }
+
+    .author {
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .author:hover {
+      color: var(--primary);
+    }
+
+    .author sup {
+      font-size: 0.7em;
+      margin-left: 1px;
+    }
+
+    .affiliations {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+    }
+
+    .affiliations sup {
+      font-size: 0.75em;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-lg);
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-light);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+    }
+
+    .btn-secondary:hover {
+      background: var(--primary);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    .btn i {
+      font-size: 1.1rem;
+    }
+
+    /* Key Stats */
+    .key-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    /* Section Titles - Cyan gradient for text only */
+    .section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      position: relative;
+      display: inline-block;
+    }
+
+    .section-title-text {
+      background: linear-gradient(135deg, var(--teal) 0%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .section-abs-text {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .section-title::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 60px;
+      height: 4px;
+      background: linear-gradient(135deg, var(--teal), var(--cyan));
+      border-radius: 2px;
+    }
+
+    /* Animation Demo */
+    .demo-section {
+      background: white;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-xl);
+      overflow: hidden;
+      margin: 3rem 0;
+    }
+
+    .demo-header {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+      color: white;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .demo-header h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .demo-content {
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 400px;
+      background: linear-gradient(180deg, #f8fafc 0%, #edf2f7 100%);
+    }
+
+    .demo-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: var(--radius-md);
+    }
+
+    /* Interactive Unmask Viewer */
+    .unmask-viewer-section {
+      background: white;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-xl);
+      overflow: hidden;
+      margin: 2rem 0;
+    }
+    
+    .unmask-header {
+      background: linear-gradient(135deg, var(--teal), var(--cyan));
+      color: white;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    
+    .unmask-header h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    
+    .unmask-content {
+      padding: 1.5rem;
+    }
+    
+    .unmask-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 16px 20px;
+      background: #f8fafa;
+      border-radius: 10px;
+      border: 1px solid #e0e8e8;
+    }
+    
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .unmask-btn {
+      padding: 8px 18px;
+      border: 1px solid var(--cyan);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--primary);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    
+    .unmask-btn:hover {
+      background: var(--cyan);
+      color: #fff;
+    }
+    
+    .unmask-btn.primary {
+      background: linear-gradient(135deg, var(--teal), var(--cyan));
+      border: none;
+      color: #fff;
+    }
+    
+    .unmask-btn.primary:hover {
+      opacity: 0.9;
+    }
+    
+    .step-slider {
+      width: 280px;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: #e0e8e8;
+      border-radius: 3px;
+      outline: none;
+    }
+    
+    .step-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--teal), var(--cyan));
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,180,216,0.3);
+    }
+    
+    .speed-select {
+      padding: 6px 12px;
+      border: 1px solid #d0d8d8;
+      border-radius: 6px;
+      background: #fff;
+      color: #333;
+      font-family: inherit;
+      font-size: 13px;
+    }
+    
+    .step-display {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--primary);
+      min-width: 100px;
+    }
+    
+    .unmask-meta {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: #666;
+    }
+    
+    .unmask-meta span {
+      color: var(--cyan);
+      font-weight: 600;
+    }
+    
+    #viewer {
+      border: 1px solid #e0e8e8;
+      border-radius: 10px;
+      padding: 20px;
+      min-height: 120px;
+      max-height: 400px;
+      overflow-y: auto;
+      background: #fff;
+      line-height: 2.2;
+      font-size: 13px;
+      word-wrap: break-word;
+      word-break: break-all;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .token {
+      display: inline;
+      padding: 1px 2px;
+      border-radius: 3px;
+      transition: all 0.2s ease;
+    }
+    
+    .masked {
+      color: #a0c0c8;
+      font-size: 11px;
+    }
+    
+    .unmasked {
+      background: rgba(0,212,170,0.1);
+      color: var(--primary-dark);
+    }
+    
+    .new {
+      background: linear-gradient(135deg, rgba(0,212,170,0.3), rgba(0,180,216,0.3));
+      color: var(--primary-dark);
+      font-weight: 600;
+      animation: highlight 0.3s ease-out;
+      box-shadow: 0 0 0 2px rgba(0,180,216,0.3);
+      border-radius: 3px;
+    }
+    
+    @keyframes highlight {
+      0% { transform: scale(1.05); box-shadow: 0 0 0 4px rgba(0,212,170,0.5); }
+      100% { transform: scale(1); box-shadow: 0 0 0 2px rgba(0,180,216,0.3); }
+    }
+    
+    .order-section {
+      margin-top: 24px;
+      padding: 16px 20px;
+      background: #f8fafa;
+      border-radius: 10px;
+      border: 1px solid #e0e8e8;
+    }
+    
+    .order-title {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+    
+    .order-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      font-size: 10px;
+    }
+    
+    .order-cell {
+      min-width: 24px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      font-weight: 500;
+      padding: 0 3px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .order-cell.past {
+      background: rgba(0,180,216,0.15);
+      color: var(--primary);
+    }
+    
+    .order-cell.current {
+      background: linear-gradient(135deg, var(--teal), var(--cyan));
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(0,180,216,0.4);
+    }
+    
+    .order-cell.future {
+      background: #f0f0f0;
+      color: #aaa;
+    }
+    
+    .highlight-note {
+      margin-top: 24px;
+      padding: 12px 16px;
+      background: rgba(0,212,170,0.08);
+      border-left: 3px solid var(--teal);
+      border-radius: 0 6px 6px 0;
+      font-size: 12px;
+      color: #555;
+    }
+
+    /* P-ReAct Code Box Style */
+    .preact-box {
+      background: white;
+      border-radius: var(--radius-xl);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-md);
+      border: 2px solid var(--teal);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      line-height: 1.8;
+    }
+
+    .preact-box-header {
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--teal) 0%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .preact-box code {
+      color: var(--text-secondary);
+    }
+
+    .tool-call-highlight {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Abstract - HIGHLIGHTS NOW IN ORANGE */
+    .abstract {
+      background: white;
+      padding: 3rem;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+      border-left: 4px solid var(--accent);
+    }
+
+    .abstract p {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    .abstract p:last-child {
+      margin-bottom: 0;
+    }
+
+    .abstract .highlight-text {
+      background: linear-gradient(135deg, rgba(255, 181, 112, 0.2) 0%, rgba(255, 197, 144, 0.2) 100%);
+      padding: 0.1em 0.3em;
+      border-radius: 3px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    /* Method Overview */
+    .method-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .method-card {
+      background: white;
+      padding: 2rem;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-md);
+      transition: all 0.3s ease;
+      border: 1px solid var(--border);
+    }
+
+    .method-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-xl);
+    }
+
+    .method-icon {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, var(--teal) 0%, var(--cyan) 100%);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .method-icon i {
+      font-size: 1.5rem;
+      color: white;
+    }
+
+    .method-card h3 {
+      font-size: 1.25rem;
+      background: linear-gradient(135deg, var(--teal) 0%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.75rem;
+    }
+
+    .method-card p {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    /* Half-page comparison layout */
+    .comparison-half-page {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 2rem;
+      align-items: start;
+    }
+
+    .comparison-image-container {
+      background: white;
+      padding: 2rem;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .comparison-image-container img {
+      max-width: 100%;
+      height: auto;
+      border-radius: var(--radius-md);
+    }
+
+    .comparison-text-container {
+      background: white;
+      padding: 2rem;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .comparison-text-container h3 {
+      background: linear-gradient(135deg, var(--teal) 0%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .comparison-text-container p {
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-bottom: 1rem;
+      font-size: 1.05rem;
+    }
+
+    .comparison-text-container ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .comparison-text-container li {
+      padding: 0.5rem 0;
+      color: var(--text-secondary);
+      position: relative;
+      padding-left: 1.5rem;
+      font-size: 1.05rem;
+    }
+
+    .comparison-text-container li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--teal);
+      font-weight: bold;
+    }
+
+    /* Analysis experiments grid */
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .analysis-item {
+      background: white;
+      padding: 1.5rem;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+    }
+
+/* 移除原来的统一样式，改成： */
+    .analysis-item h4 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    /* 蓝色版本 - 给Ablation Study用 */
+    .analysis-item h4.blue-title {
+      background: linear-gradient(135deg, #7ec8ff 0%, #3399ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* 橙色版本 - 给Latency Analysis用 */
+    .analysis-item h4.orange-title {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .analysis-item img {
+      max-width: 100%;
+      height: auto;
+      border-radius: var(--radius-md);
+    }
+
+    /* Comparison Section */
+    .comparison-wrapper {
+      background: white;
+      border-radius: var(--radius-xl);
+      padding: 2rem;
+      box-shadow: var(--shadow-lg);
+      margin-top: 2rem;
+    }
+
+    .comparison-diagram {
+      display: grid;
+      gap: 2rem;
+    }
+
+    .paradigm-box {
+      background: var(--bg-light);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      border: 2px solid var(--border);
+    }
+
+    .paradigm-box.highlight {
+      border-color: var(--green);
+      background: rgba(51, 255, 153, 0.05);
+    }
+
+    .paradigm-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .paradigm-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .paradigm-badge.old {
+      background: #fed7d7;
+      color: #c53030;
+    }
+
+    .paradigm-badge.new {
+      background: rgba(51, 255, 153, 0.2);
+      color: #047857;
+    }
+
+    .paradigm-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #666666;
+    }
+
+    .paradigm-flow {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    .flow-item {
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .flow-item.think {
+      background: rgba(0, 180, 216, 0.2);
+      color: var(--primary);
+    }
+
+    .flow-item.tool {
+      background: #feebc8;
+      color: #c05621;
+    }
+
+    .flow-item.wait {
+      background: #e2e8f0;
+      color: #4a5568;
+    }
+
+    .flow-item.parallel {
+      background: rgba(51, 255, 153, 0.2);
+      color: #047857;
+    }
+
+    .flow-arrow {
+      color: var(--text-muted);
+    }
+
+    /* Results Table */
+    .results-section {
+      background: white;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .results-header {
+      background: linear-gradient(135deg, var(--teal) 0%, var(--cyan) 100%);
+      color: white;
+      padding: 1.5rem 2rem;
+    }
+
+    .results-header h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .results-header p {
+      opacity: 0.9;
+      font-size: 0.9rem;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      padding: 1rem;
+    }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    .results-table th,
+    .results-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .results-table th {
+      background: var(--bg-light);
+      font-weight: 600;
+      color: var(--primary-dark);
+      white-space: nowrap;
+    }
+
+    .results-table tr:hover {
+      background: rgba(0, 180, 216, 0.02);
+    }
+
+    .results-table .highlight-row {
+      background: rgba(255, 181, 112, 0.15) !important;
+    }
+
+    .results-table .highlight-row td {
+      font-weight: 600;
+    }
+
+    .results-table .model-name {
+      font-weight: 600;
+      color: #666666;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+    }
+
+    .results-table .best {
+      background: linear-gradient(135deg, var(--teal) 0%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 700;
+    }
+
+    .results-table .second-best {
+      text-decoration: underline;
+      font-weight: 600;
+    }
+
+    .results-table th {
+      background: var(--bg-light);
+      font-weight: 600;
+      color: #666666;
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    .results-table td {
+      text-align: center;
+    }
+
+    .results-table td.model-name {
+      text-align: left;
+    }
+
+    .results-table thead tr:first-child th {
+      border-bottom: none;
+    }
+
+    .results-table .category-header {
+      background: var(--bg-light);
+      font-weight: 600;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Code Block */
+    .code-section {
+      background: white;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      margin-top: 2rem;
+      border: 1px solid var(--border);
+    }
+
+    .code-header {
+      background: linear-gradient(135deg, var(--teal), var(--cyan));  /* 改成这个 */
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .code-header span {
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .code-content {
+      padding: 1.5rem;
+      overflow-x: auto;
+      background: white;
+    }
+
+    .code-content pre {
+      margin: 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--text-primary);
+    }
+
+    .code-content .comment {
+      color: #22863a;
+    }
+
+    .code-content .keyword {
+      color: #d73a49;
+    }
+
+    .code-content .string {
+      color: #032f62;
+    }
+
+    .code-content .number {
+      color: #005cc5;
+    }
+
+    /* BibTeX */
+    .bibtex-section {
+      background: white;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+
+    .bibtex-header {
+      background: var(--bg-light);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .bibtex-header h3 {
+      font-size: 1.1rem;
+      background: linear-gradient(135deg, var(--teal) 0%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .bibtex-content {
+      padding: 1.5rem;
+      background: #fafafa;
+    }
+
+    .bibtex-content pre {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* Acknowledgements - 简化样式，移除框 */
+    .ack-section {
+      margin-top: 2rem;
+    }
+
+    .ack-section h3 {
+      background: linear-gradient(135deg, var(--teal) 0%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .ack-section p {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      line-height: 1.8;
+    }
+
+    .ack-section a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .ack-section a:hover {
+      color: var(--accent);
+    }
+
+    /* Footer */
+    footer {
+      background: var(--bg-light);
+      color: var(--text-secondary);
+      padding: 3rem 0;
+      margin-top: 4rem;
+      border-top: 1px solid var(--border);
+    }
+
+    footer .container {
+      text-align: center;
+    }
+
+    footer p {
+      font-size: 0.9rem;
+    }
+
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-in {
+      animation: fadeInUp 0.6s ease forwards;
+    }
+
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero {
+        padding: 3rem 0;
+      }
+
+      .hero-title {
+        font-size: 2rem;
+      }
+
+      .authors {
+        font-size: 0.9rem;
+      }
+
+      .action-buttons {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .key-stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .section {
+        padding: 3rem 0;
+      }
+
+      .abstract {
+        padding: 1.5rem;
+      }
+
+      .method-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .unmask-controls {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .step-slider {
+        width: 100%;
+      }
+
+      .comparison-half-page {
+        grid-template-columns: 1fr;
+      }
+
+      .analysis-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Image figure styling */
+    .figure {
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    .figure img {
+      max-width: 100%;
+      height: auto;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .figure-caption {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    /* Architecture image */
+    .architecture-img {
+      background: white;
+      padding: 2rem;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .architecture-img img {
+      width: 100%;
+      max-width: 900px;
+    }
+
+    /* Scroll to top */
+    .scroll-top {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, var(--teal), var(--cyan));
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .scroll-top.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .scroll-top:hover {
+      background: var(--accent);
+      transform: translateY(-3px);
+    }
+  </style>
+</head>
+<body>
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <h1 class="hero-title animate-in delay-1">
+          <span class="highlight">DLLM-Searcher</span>
+        </h1>
+        
+        <p class="hero-subtitle animate-in delay-1">
+          Adapting Diffusion Large Language Models for Search Agents
+        </p>
+        
+        <div class="authors animate-in delay-2">
+          <a href="#" class="author">Jiahao Zhao<sup>*</sup></a>
+          <a href="#" class="author">Shaoxuan Xu<sup>*</sup></a>
+          <a href="#" class="author">Zhongxiang Sun<sup>*†</sup></a>
+          <a href="#" class="author">Fengqi Zhu</a>
+          <a href="#" class="author">Jingyang Ou</a>
+          <a href="#" class="author">Yuling Shi</a>
+          <a href="#" class="author">Chongxuan Li</a>
+          <a href="#" class="author">Xiao Zhang</a>
+          <a href="#" class="author">Jun Xu<sup>‡</sup></a>
+        </div>
+        
+        <div class="affiliations animate-in delay-2">
+          <sup>*</sup>Equal Contribution &nbsp;
+          <sup>†</sup>Project Leader &nbsp;
+          <sup>‡</sup>Corresponding Author
+        </div>
+        
+        <div class="action-buttons animate-in delay-3">
+          <a href="https://github.com/your-repo/DLLM-Searcher" class="btn" target="_blank" style="border: 1px solid #d1d5db; color: #24292e; background: transparent;">
+            <i class="fab fa-github"></i> Code
+          </a>
+          <a href="https://arxiv.org/abs/xxxx.xxxxx" class="btn" target="_blank" style="border: 1px solid #d1d5db; color: #B31B1B; background: transparent;">
+            <i class="ai ai-arxiv"></i> arXiv
+          </a>
+          <a href="https://huggingface.co/your-repo" class="btn" target="_blank" style="border: 1px solid #d1d5db; color: #FF9D00; background: transparent;">
+            <i class="fas fa-database"></i> Dataset
+          </a>
+          <a href="#" class="btn" target="_blank" style="border: 1px solid #d1d5db; color: #F97316; background: transparent;">
+            <i class="fas fa-file-pdf"></i> Paper
+          </a>
+        </div>
+        
+        <div class="key-stats animate-in delay-4">
+          <div class="stat-item">
+            <div class="stat-value">~15%</div>
+            <div class="stat-label">Inference Acceleration</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">SFT & VRPO</div>
+            <div class="stat-label">Agentic Post-Training</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">P-ReAct</div>
+            <div class="stat-label">New Agent Paradigm</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Demo Animation -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">⚡ <span class="section-title-text">One P-ReAct Iteration</span></h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem; max-width: 700px;">
+        DLLM-Searcher decodes the tool call region <strong>before</strong> the think region, 
+        enabling the model to <strong>keep thinking while waiting</strong> for tool response.
+      </p>
+      
+      <!-- Interactive Unmask Viewer -->
+      <div class="unmask-viewer-section">
+        <div class="unmask-header">
+          <i class="fas fa-layer-group"></i>
+          <h3>Interactive Decoding Process</h3>
+        </div>
+        <div class="unmask-content">
+
+          <div class="highlight-note" style="margin-top: 28px;">
+            💡 Notice: <code>&lt;tool_call&gt;</code> and <code>&lt;/tool_call&gt;</code> are decoded at step 1, while <code>&lt;think&gt;</code> content appears after step 32.
+          </div>
+          
+          <div class="unmask-controls">
+            <div class="control-group">
+              <button class="unmask-btn primary" id="play">▶ Play</button>
+              <button class="unmask-btn" id="prev">◀</button>
+              <input id="step" type="range" min="0" max="0" value="0" class="step-slider">
+              <button class="unmask-btn" id="next">▶</button>
+            </div>
+            <div class="control-group">
+              <span class="step-display">Step <span id="stepNum">0</span> / <span id="stepMax">0</span></span>
+            </div>
+            <div class="control-group">
+              <span style="color:#888;font-size:12px;">Speed</span>
+              <select id="speed" class="speed-select">
+                <option value="800">Slow</option>
+                <option value="400" selected>Medium</option>
+                <option value="200">Fast</option>
+                <option value="100">Very Fast</option>
+              </select>
+            </div>
+            <button class="unmask-btn" id="reset">↺ Reset</button>
+          </div>
+          
+          <div class="unmask-meta">
+            Revealed: <span id="revealedCount">0</span> / <span id="totalCount">0</span> &nbsp;|&nbsp; New this step: <span id="newCount">0</span>
+          </div>
+          
+          <div id="viewer"></div>
+          
+          <div class="order-section">
+            <div class="order-title">Decoding Order (first_unmask_times - each cell = one token's unmask step)</div>
+            <div class="order-grid" id="orderGrid"></div>
+          </div>
+          
+        </div>
+      </div>
+
+  </section>
+
+  <!-- Abstract -->
+  <section class="section" style="padding-top: 0;">
+    <div class="container">
+      <h2 class="section-title">📋 <span class="section-abs-text">Abstract</span></h2>
+      
+      <div class="abstract">
+        <p>
+          Recently, <span class="highlight-text">Diffusion Large Language Models (dLLMs)</span> have demonstrated unique efficiency advantages, enabled by their inherently parallel decoding mechanism and flexible generation paradigm. Meanwhile, despite the rapid advancement of Search Agents, their practical deployment is constrained by a fundamental limitation: the <span class="highlight-text">Latency Challenge</span> — the serial execution of multi-round reasoning, tool calling, and tool response waiting under the ReAct agent paradigm induces severe end-to-end latency.
+        </p>
+        <p>
+          In this paper, we propose <span class="highlight-text">DLLM-Searcher</span>, an optimization framework for dLLM-based Search Agents. To solve the <span class="highlight-text">Agent Ability Challenge</span>, we design a two-stage post-training pipeline encompassing <span class="highlight-text">Agentic SFT</span> and <span class="highlight-text">Agentic VRPO</span>, which enhances the backbone dLLM's information seeking and reasoning capabilities.
+        </p>
+        <p>
+          To mitigate the Latency Challenge, we propose a novel agent paradigm termed <span class="highlight-text">P-ReAct</span> (Parallel-Reasoning and Acting). P-ReAct guides the model to prioritize decoding <code>tool_call</code> instructions, thereby allowing the model to <strong>keep thinking while waiting</strong> for the tool's return.
+        </p>
+        <p>
+          Experimental results demonstrate that DLLM-Searcher achieves performance comparable to mainstream LLM-based search agents and P-ReAct delivers approximately <span class="highlight-text">15% inference acceleration</span>.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture Overview -->
+  <section class="section" style="background: white;">
+    <div class="container">
+      <h2 class="section-title">🏗️ <span class="section-title-text">Architecture Overview</span></h2>
+      
+      <div class="figure architecture-img" style="text-align: center; margin-top: 2rem;">
+        <img src="./train_infer.pdf" alt="DLLM-Searcher Architecture">
+        <p class="figure-caption">
+          <strong>Figure:</strong> DLLM-Searcher includes training process and inference process. In training, both Agentic SFT and Agentic VRPO use Block Attention and Agentic Noising to compute the Agentic ELBO. In inference, we employ the P-ReAct agent paradigm with token pre-filling and confidence biasing.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Results -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">📊 <span class="section-title-text">Experimental Results</span></h2>
+      
+      <div class="results-section">
+        <div class="results-header">
+          <h3>Performance on Multi-hop QA Benchmarks</h3>
+          <p>Comparison with traditional RAG methods, LLM agents, and dLLM agents</p>
+        </div>
+        
+        <div class="table-wrapper">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th rowspan="2">Models</th>
+                <th colspan="2">HotpotQA<sup>†</sup></th>
+                <th colspan="2">2Wiki<sup>†</sup></th>
+                <th colspan="2">Bamboogle<sup>‡</sup></th>
+                <th colspan="2">Musique<sup>†</sup></th>
+                <th colspan="2">Avg</th>
+              </tr>
+              <tr>
+                <th><small>ACC<sub>R</sub></small></th>
+                <th><small>ACC<sub>L</sub></small></th>
+                <th><small>ACC<sub>R</sub></small></th>
+                <th><small>ACC<sub>L</sub></small></th>
+                <th><small>ACC<sub>R</sub></small></th>
+                <th><small>ACC<sub>L</sub></small></th>
+                <th><small>ACC<sub>R</sub></small></th>
+                <th><small>ACC<sub>L</sub></small></th>
+                <th><small>ACC<sub>R</sub></small></th>
+                <th><small>ACC<sub>L</sub></small></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="category-header">
+                <td colspan="11">Traditional RAG</td>
+              </tr>
+              <tr>
+                <td class="model-name">SuRe</td>
+                <td>32.4</td><td>48.4</td>
+                <td>22.2</td><td>26.8</td>
+                <td>17.6</td><td>28.0</td>
+                <td>7.2</td><td>10.0</td>
+                <td>19.9</td><td>28.3</td>
+              </tr>
+              <tr>
+                <td class="model-name">Selective-Context</td>
+                <td>33.2</td><td>43.4</td>
+                <td>27.4</td><td>29.6</td>
+                <td>15.2</td><td>20.8</td>
+                <td>5.8</td><td>8.8</td>
+                <td>20.4</td><td>25.7</td>
+              </tr>
+              <tr>
+                <td class="model-name">Adaptive-RAG</td>
+                <td>38.0</td><td>47.4</td>
+                <td>27.8</td><td>25.8</td>
+                <td>21.6</td><td>25.0</td>
+                <td>7.2</td><td>11.6</td>
+                <td>23.7</td><td>27.5</td>
+              </tr>
+              <tr>
+                <td class="model-name">IRCoT</td>
+                <td>48.8</td><td>55.2</td>
+                <td>41.0</td><td>38.6</td>
+                <td>32.0</td><td>39.2</td>
+                <td>11.6</td><td>15.8</td>
+                <td>33.4</td><td>37.2</td>
+              </tr>
+              <tr>
+                <td class="model-name">Iter-RetGen</td>
+                <td>41.6</td><td>54.4</td>
+                <td>32.4</td><td>34.4</td>
+                <td>26.4</td><td>32.0</td>
+                <td>14.8</td><td>18.2</td>
+                <td>28.8</td><td>34.8</td>
+              </tr>
+              <tr>
+                <td class="model-name">CR-Planner</td>
+                <td>44.4</td><td>33.6</td>
+                <td>48.2</td><td>22.0</td>
+                <td>35.2</td><td>34.4</td>
+                <td>12.2</td><td>11.4</td>
+                <td>35.0</td><td>25.4</td>
+              </tr>
+              <tr>
+                <td class="model-name">ReARTeR</td>
+                <td>46.8</td><td>50.6</td>
+                <td>55.4</td><td>53.4</td>
+                <td>49.6</td><td>54.4</td>
+                <td><span class="best">29.6</span></td><td><span class="second-best">30.2</span></td>
+                <td>45.4</td><td>47.2</td>
+              </tr>
+              <tr class="category-header">
+                <td colspan="11">ARM-based LLMs Agent</td>
+              </tr>
+              <tr>
+                <td class="model-name">Search-o1</td>
+                <td>40.8</td><td>53.2</td>
+                <td>47.0</td><td>51.2</td>
+                <td>49.6</td><td>52.0</td>
+                <td>15.2</td><td>19.0</td>
+                <td>38.2</td><td>43.9</td>
+              </tr>
+              <tr>
+                <td class="model-name">Search-R1</td>
+                <td>49.6</td><td><span class="second-best">62.2</span></td>
+                <td>46.0</td><td>50.0</td>
+                <td>47.2</td><td>56.0</td>
+                <td>28.0</td><td>26.0</td>
+                <td>42.7</td><td>48.6</td>
+              </tr>
+              <tr>
+                <td class="model-name">WebSailor<sup>*</sup></td>
+                <td>50.4</td><td>52.4</td>
+                <td>59.4</td><td>61.4</td>
+                <td>57.6</td><td>65.6</td>
+                <td>22.0</td><td>28.0</td>
+                <td>47.4</td><td>51.9</td>
+              </tr>
+              <tr>
+                <td class="model-name">R1Searcher<sup>*</sup></td>
+                <td><span class="second-best">58.0</span></td><td><span class="second-best">62.2</span></td>
+                <td><span class="second-best">59.6</span></td><td><span class="second-best">63.4</span></td>
+                <td><span class="second-best">66.4</span></td><td><span class="second-best">68.8</span></td>
+                <td>28.2</td><td><span class="best">31.4</span></td>
+                <td><span class="second-best">53.1</span></td><td><span class="second-best">56.5</span></td>
+              </tr>
+              <tr class="category-header">
+                <td colspan="11">dLLMs Agent</td>
+              </tr>
+              <tr>
+                <td class="model-name">SDAR</td>
+                <td>/</td><td>/</td>
+                <td>/</td><td>/</td>
+                <td>/</td><td>/</td>
+                <td>/</td><td>/</td>
+                <td>/</td><td>/</td>
+              </tr>
+              <tr>
+                <td class="model-name">Dream</td>
+                <td>11.0</td><td>11.6</td>
+                <td>13.6</td><td>12.0</td>
+                <td>12.0</td><td>13.6</td>
+                <td>3.8</td><td>3.2</td>
+                <td>10.1</td><td>10.1</td>
+              </tr>
+              <tr>
+                <td class="model-name">LLaDA</td>
+                <td>36.0</td><td>32.8</td>
+                <td>42.0</td><td>38.8</td>
+                <td>46.4</td><td>42.4</td>
+                <td>15.2</td><td>15.8</td>
+                <td>34.9</td><td>32.5</td>
+              </tr>
+              <tr class="highlight-row">
+                <td class="model-name">DLLM-Searcher</td>
+                <td><span class="best">60.4</span></td><td><span class="best">62.4</span></td>
+                <td><span class="best">69.8</span></td><td><span class="best">64.6</span></td>
+                <td><span class="best">68.8</span></td><td><span class="best">69.6</span></td>
+                <td><span class="second-best">29.0</span></td><td>29.8</td>
+                <td><span class="best">57.0</span></td><td><span class="best">56.6</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- P-ReAct vs ReAct Comparison -->
+  <section class="section" style="background: white;">
+    <div class="container">
+      <h2 class="section-title">⚖️ <span class="section-title-text">P-ReAct vs ReAct</span></h2>
+      
+      <div class="comparison-half-page">
+        <div class="comparison-image-container">
+          <img src="./Intro_v4.pdf" alt="P-ReAct vs ReAct Comparison" style="max-width: 100%;">
+        </div>
+        
+        <div class="comparison-text-container">
+          <h3>Why P-ReAct is Better</h3>
+          <p>
+            Traditional ReAct paradigm suffers from sequential execution: the model must complete reasoning before making tool calls, then wait idly for tool responses. This creates significant latency bottlenecks in multi-turn agent interactions.
+          </p>
+          <p>
+            <strong>P-ReAct addresses this by:</strong>
+          </p>
+          <ul>
+            <li>Prioritizing <code>&lt;tool_call&gt;</code> token generation at early decoding steps</li>
+            <li>Enabling parallel reasoning while waiting for tool API responses</li>
+          </ul>
+          <p style="margin-top: 1.5rem; padding: 1rem; background: rgba(0,212,170,0.08); border-radius: 8px; border-left: 3px solid var(--teal);">
+            <strong>Key Insight:</strong> By decoding tool calls first, the model can continue thinking while external APIs execute, effectively overlapping computation with I/O wait time.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Analysis Experiments -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">🔬 <span class="section-title-text">Analysis Experiments</span></h2>
+      
+      <div class="analysis-grid">
+      <div class="analysis-item">
+        <h4 class="blue-title">DLLMs use P-ReAct vs ReAct</h4>
+        <img src="./RQ2.png" alt="Ablation Study">
+      </div>
+      
+      <div class="analysis-item">
+        <h4 class="orange-title">DLLMs vs LLMs use P-ReAct</h4>
+        <img src="./RQ3.png" alt="Latency Analysis">
+      </div>
+    </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- P-ReAct Implementation -->
+  <section class="section" style="background: white;">
+    <div class="container">
+      <h2 class="section-title">💻 <span class="section-title-text">P-ReAct Implementation</span></h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        Only <strong>11 lines of code</strong> to implement complete token-prefilling and confidence biasing.
+      </p>
+      
+      <div class="code-section">
+        <div class="code-header">
+          <span><i class="fab fa-python"></i> scheduler.py</span>
+          <button class="copy-btn" onclick="copyCode()">
+            <i class="fas fa-copy"></i>
+            Copy
+          </button>
+        </div>
+        <div class="code-content">
+          <pre><code><span class="keyword">elif</span> <span class="string">'toolcall_pre_rl'</span> <span class="keyword">in</span> seq.remasking_strategy:
+    <span class="keyword">if</span> seq.current_denoising_step == <span class="number">0</span>:
+        seq_x0[your_tool_end] = <span class="number">151658</span>  <span class="comment"># &lt;/tool_call&gt;</span>
+        transfer_index[your_tool_end] = <span class="keyword">True</span>
+        seq_x0[your_tool_start] = <span class="number">151657</span>  <span class="comment"># &lt;tool_call&gt;</span>
+        transfer_index[your_tool_start] = <span class="keyword">True</span>
+    <span class="keyword">else</span>:
+        confidence = torch.where(mask_index, seq_x0_p, -np.inf)
+        confidence[your_tool_start:your_tool_end + <span class="number">1</span>] = \
+            confidence[your_tool_start:your_tool_end + <span class="number">1</span>] + <span class="number">0.5</span>
+        _, top_indices = torch.topk(confidence, num_to_transfer)
+        transfer_index[top_indices] = <span class="keyword">True</span></code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BibTeX -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">📝 <span class="section-title-text">Citation</span></h2>
+      
+      <div class="bibtex-section">
+        <div class="bibtex-header">
+          <h3>BibTeX</h3>
+          <button class="copy-btn" onclick="copyBibtex()">
+            <i class="fas fa-copy"></i>
+            Copy
+          </button>
+        </div>
+        <div class="bibtex-content">
+          <pre id="bibtex-code">@article{zhao2026dllmsearcher,
+  title     = {DLLM-Searcher: Adapting Diffusion Large Language Models for Search Agents},
+  author    = {Zhao, Jiahao and Xu, Shaoxuan and Sun, Zhongxiang and Zhu, Fengqi and Ou, Jingyang and Li, Chongxuan and Zhang, Xiao and Xu, Jun},
+  journal   = {arXiv preprint arXiv:xxxx.xxxxx},
+  year      = {2026}
+}</pre>
+        </div>
+      </div>
+      
+      <!-- Acknowledgements -->
+    </div>
+  </section>
+
+  <section class="section" style="background: white;">
+  <div class="container">
+    <h2 class="section-title">🙏 <span class="section-title-text">Acknowledgements</span></h2>
+    
+    <div class="ack-section">
+      <p>
+        We sincerely thank the authors of the following open-source repositories for their efforts:
+        <strong>Training Frameworks:</strong> <a href="https://github.com/Gen-Verse/dLLM-RL">TraceRL</a>, <a href="https://github.com/ML-GSAI/ESPO">ESPO</a> &nbsp;|&nbsp;
+        <strong>Evaluation & Serving:</strong> <a href="https://github.com/abusallam/Websailor">WebSailor</a>, <a href="https://github.com/RUCAIBox/R1-Searcher">R1Searcher</a> &nbsp;|&nbsp;
+        <strong>Base Models:</strong> <a href="https://github.com/ML-GSAI/LLaDA">LLaDA</a>, <a href="https://github.com/DreamLM/Dream">Dream7B</a>, <a href="https://github.com/JetAstra/SDAR">SDAR</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>
+        This page template is inspired by <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a>.
+        <br>
+        © 2026 DLLM-Searcher Team. All rights reserved.
+      </p>
+    </div>
+  </footer>
+
+  <!-- Scroll to Top Button -->
+  <button class="scroll-top" id="scrollTop" onclick="scrollToTop()">
+    <i class="fas fa-chevron-up"></i>
+  </button>
+
+  <script>
+    // Copy code functionality
+    function copyCode() {
+      const code = document.querySelector('.code-content pre code').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        alert('Code copied to clipboard!');
+      });
+    }
+
+    // Copy BibTeX
+    function copyBibtex() {
+      const bibtex = document.getElementById('bibtex-code').innerText;
+      navigator.clipboard.writeText(bibtex).then(() => {
+        alert('BibTeX copied to clipboard!');
+      });
+    }
+
+    // Scroll to top
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Show/hide scroll button
+    window.addEventListener('scroll', () => {
+      const scrollTop = document.getElementById('scrollTop');
+      if (window.pageYOffset > 300) {
+        scrollTop.classList.add('visible');
+      } else {
+        scrollTop.classList.remove('visible');
+      }
+    });
+
+    // Animate elements on scroll
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.method-card, .abstract, .demo-section, .results-section, .unmask-viewer-section').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(20px)';
+      el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+      observer.observe(el);
+    });
+
+    // ============================================
+    // Block Unmask Viewer - Interactive Demo
+    // ============================================
+    const tokens = [
+      "<think>", "\\n", "To", " answer", " the", " question", ",", " I", " need", " to", 
+      " find", " the", " location", " of", " the", " 1973", " NFL", " Pro", " Bowl", " and", 
+      " confirm", " if", " it", "'s", " within", " the", " Truman", " Sports", " Complex", ".", 
+      " Then", ",", " I", " need", " to", " identify", " the", " other", " stadium", " in", 
+      " that", " complex", ".", " First", ",", " I", "'ll", " search", " for", " the", 
+      " 1973", " NFL", "'s", " Pro", " Bowl", " location", " and", " check", " if", " it", 
+      "'s", " in", " the", " Truman", " Sports", " Complex", ".", " If", " so", ",", 
+      " I", "'ll", " search", " for", " the", " other", " stadium", " in", " that", " complex", 
+      " to", " provide", " the", " full", " answer", ".", "\\n", "</think>", "\\n", "\\n", 
+      "<tool_call>", "\\n", "{", "\"name\"", ":", "\"search\"", ",", "\"arguments\"", ":", "{", 
+      "\"query\"", ":", "[", "\"1973", " NFL", " Pro", " Bowl", " location", "\"", ",", 
+      "\"Truman", " Sports", " Complex", " Pro", " Bowl", " stadiums", " list", "\"", "]", "}", 
+      "}", "\\n", "</tool_call>", "<|im_end|>"
+    ];
+    
+    const firstUnmaskTimes = [
+      35, 33, 37, 39, 38, 42, 41, 40, 43, 44,
+      45, 55, 58, 57, 46, 47, 48, 49, 51, 50,
+      53, 54, 52, 56, 59, 64, 65, 66, 67, 63,
+      62, 61, 60, 68, 74, 69, 70, 72, 71, 73,
+      78, 75, 76, 77, 88, 79, 80, 81, 82, 83,
+      87, 84, 85, 86, 95, 91, 92, 94, 93, 96,
+      97, 90, 89, 98, 99, 109, 100, 102, 101, 108,
+      107, 105, 104, 103, 106, 112, 123, 110, 111, 113,
+      114, 115, 116, 117, 121, 118, 125, 120, 119, 127,
+      1, 3, 2, 5, 4, 7, 6, 17, 8, 16,
+      9, 10, 12, 13, 15, 14, 18, 20, 19, 21,
+      26, 24, 25, 22, 23, 28, 29, 30, 31, 11,
+      3, 1, 27, 124
+    ];
+    
+    const maxStep = Math.max(...firstUnmaskTimes);
+    const n = tokens.length;
+    
+    const viewer = document.getElementById('viewer');
+    const orderGrid = document.getElementById('orderGrid');
+    const stepInput = document.getElementById('step');
+    const stepNum = document.getElementById('stepNum');
+    const stepMax = document.getElementById('stepMax');
+    const playBtn = document.getElementById('play');
+    const prevBtn = document.getElementById('prev');
+    const nextBtn = document.getElementById('next');
+    const resetBtn = document.getElementById('reset');
+    const speedSel = document.getElementById('speed');
+
+    stepInput.max = String(maxStep);
+    stepMax.textContent = String(maxStep);
+    document.getElementById('totalCount').textContent = String(n);
+
+    function initViewer() {
+      viewer.innerHTML = '';
+      for (let i = 0; i < n; i++) {
+        const span = document.createElement('span');
+        span.className = 'token masked';
+        span.dataset.index = i;
+        span.textContent = '<|mask|>';
+        viewer.appendChild(span);
+      }
+    }
+    
+    function initOrderGrid() {
+      orderGrid.innerHTML = '';
+      for (let i = 0; i < n; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'order-cell future';
+        cell.textContent = firstUnmaskTimes[i];
+        cell.title = `Token ${i}: "${tokens[i]}" → Step ${firstUnmaskTimes[i]}`;
+        orderGrid.appendChild(cell);
+      }
+    }
+
+    function render(t) {
+      stepNum.textContent = String(t);
+      stepInput.value = String(t);
+      
+      const tokenEls = viewer.querySelectorAll('.token');
+      const cells = orderGrid.querySelectorAll('.order-cell');
+      let revealed = 0, newly = 0;
+
+      for (let i = 0; i < n; i++) {
+        const token = tokenEls[i];
+        const cell = cells[i];
+        const text = tokens[i];
+        
+        token.className = 'token';
+        cell.className = 'order-cell';
+        
+        if (firstUnmaskTimes[i] <= t) {
+          let displayText = text;
+          if (text === '\\n') {
+            displayText = '↵';
+          }
+          token.textContent = displayText;
+          
+          if (firstUnmaskTimes[i] === t) {
+            token.classList.add('new');
+            cell.classList.add('current');
+            newly++;
+          } else {
+            token.classList.add('unmasked');
+            cell.classList.add('past');
+          }
+          revealed++;
+        } else {
+          token.classList.add('masked');
+          token.textContent = '<|mask|>';
+          cell.classList.add('future');
+        }
+      }
+      
+      document.getElementById('revealedCount').textContent = String(revealed);
+      document.getElementById('newCount').textContent = String(newly);
+    }
+
+    let timer = null;
+    function play() {
+      if (timer) return;
+      playBtn.textContent = '⏸ Pause';
+      timer = setInterval(() => {
+        let v = Number(stepInput.value);
+        if (v >= maxStep) {
+          pause();
+          return;
+        }
+        render(v + 1);
+      }, Number(speedSel.value));
+    }
+    
+    function pause() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+      playBtn.textContent = '▶ Play';
+    }
+
+    stepInput.addEventListener('input', () => render(Number(stepInput.value)));
+    playBtn.addEventListener('click', () => (timer ? pause() : play()));
+    prevBtn.addEventListener('click', () => {
+      const v = Math.max(0, Number(stepInput.value) - 1);
+      render(v);
+    });
+    nextBtn.addEventListener('click', () => {
+      const v = Math.min(maxStep, Number(stepInput.value) + 1);
+      render(v);
+    });
+    resetBtn.addEventListener('click', () => {
+      pause();
+      render(0);
+    });
+    speedSel.addEventListener('change', () => {
+      if (timer) { pause(); play(); }
+    });
+
+    // 键盘控制
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+      
+      if (e.key === ' ') {
+        e.preventDefault();
+        timer ? pause() : play();
+      } else if (e.key === 'ArrowLeft') {
+        render(Math.max(0, Number(stepInput.value) - 1));
+      } else if (e.key === 'ArrowRight') {
+        render(Math.min(maxStep, Number(stepInput.value) + 1));
+      }
+    });
+
+    // 初始化
+    initViewer();
+    initOrderGrid();
+    render(0);
+  </script>
+</body>
+</html>
