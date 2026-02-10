@@ -1054,7 +1054,8 @@
       background: white;
     }
 
-    .code-content pre {
+    .code-content pre,
+    .code-content pre code {
       margin: 0;
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.85rem;
@@ -1349,16 +1350,16 @@
         </div>
         
         <div class="action-buttons animate-in delay-3">
-          <a href="https://github.com/your-repo/DLLM-Searcher" class="btn" target="_blank" style="border: 1px solid #d1d5db; color: #24292e; background: transparent;">
+          <a href="https://github.com/bubble65/DLLM-Searcher" class="btn" target="_blank" style="border: 1px solid #d1d5db; color: #24292e; background: transparent;">
             <i class="fab fa-github"></i> Code
           </a>
-          <a href="https://arxiv.org/abs/xxxx.xxxxx" class="btn" target="_blank" style="border: 1px solid #d1d5db; color: #B31B1B; background: transparent;">
+          <a href="https://arxiv.org/abs/2602.07035" class="btn" target="_blank" style="border: 1px solid #d1d5db; color: #B31B1B; background: transparent;">
             <i class="ai ai-arxiv"></i> arXiv
           </a>
-          <a href="https://huggingface.co/your-repo" class="btn" target="_blank" style="border: 1px solid #d1d5db; color: #FF9D00; background: transparent;">
+          <a href="https://github.com/bubble65/DLLM-Searcher" class="btn" target="_blank" style="border: 1px solid #d1d5db; color: #FF9D00; background: transparent;">
             <i class="fas fa-database"></i> Dataset
           </a>
-          <a href="#" class="btn" target="_blank" style="border: 1px solid #d1d5db; color: #F97316; background: transparent;">
+          <a href="https://arxiv.org/pdf/2602.07035" class="btn" target="_blank" style="border: 1px solid #d1d5db; color: #F97316; background: transparent;">
             <i class="fas fa-file-pdf"></i> Paper
           </a>
         </div>
@@ -1443,7 +1444,7 @@
   <!-- Abstract -->
   <section class="section" style="padding-top: 0;">
     <div class="container">
-      <h2 class="section-title">📋 <span class="section-abs-text">Abstract</span></h2>
+      <h2 class="section-title">📋 <span class="section-title-text">Abstract</span></h2>
       
       <div class="abstract">
         <p>
@@ -1746,12 +1747,16 @@
           </button>
         </div>
         <div class="bibtex-content">
-          <pre id="bibtex-code">@article{zhao2026dllmsearcher,
-  title     = {DLLM-Searcher: Adapting Diffusion Large Language Models for Search Agents},
-  author    = {Zhao, Jiahao and Xu, Shaoxuan and Sun, Zhongxiang and Zhu, Fengqi and Ou, Jingyang and Li, Chongxuan and Zhang, Xiao and Xu, Jun},
-  journal   = {arXiv preprint arXiv:xxxx.xxxxx},
-  year      = {2026}
-}</pre>
+          <pre id="bibtex-code">@misc{zhao2026dllmsearcheradaptingdiffusionlarge,
+            title={DLLM-Searcher: Adapting Diffusion Large Language Model for Search Agents}, 
+            author={Jiahao Zhao and Shaoxuan Xu and Zhongxiang Sun and Fengqi Zhu and Jingyang Ou and Yuling Shi and Chongxuan Li and Xiao Zhang and Jun Xu},
+            year={2026},
+            eprint={2602.07035},
+            archivePrefix={arXiv},
+            primaryClass={cs.AI},
+            url={https://arxiv.org/abs/2602.07035}, 
+      }
+      </pre>
         </div>
       </div>
       
@@ -1766,8 +1771,11 @@
     <div class="ack-section">
       <p>
         We sincerely thank the authors of the following open-source repositories for their efforts:
-        <strong>Training Frameworks:</strong> <a href="https://github.com/Gen-Verse/dLLM-RL">TraceRL</a>, <a href="https://github.com/ML-GSAI/ESPO">ESPO</a> &nbsp;|&nbsp;
-        <strong>Evaluation & Serving:</strong> <a href="https://github.com/abusallam/Websailor">WebSailor</a>, <a href="https://github.com/RUCAIBox/R1-Searcher">R1Searcher</a> &nbsp;|&nbsp;
+        <br><br>
+        <strong>Training Frameworks:</strong> <a href="https://github.com/Gen-Verse/dLLM-RL">TraceRL</a>, <a href="https://github.com/ML-GSAI/ESPO">ESPO</a>
+        <br>
+        <strong>Evaluation & Serving:</strong> <a href="https://github.com/abusallam/Websailor">WebSailor</a>, <a href="https://github.com/RUCAIBox/R1-Searcher">R1Searcher</a>
+        <br>
         <strong>Base Models:</strong> <a href="https://github.com/ML-GSAI/LLaDA">LLaDA</a>, <a href="https://github.com/DreamLM/Dream">Dream7B</a>, <a href="https://github.com/JetAstra/SDAR">SDAR</a>
       </p>
     </div>
